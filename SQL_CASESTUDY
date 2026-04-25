@@ -1,0 +1,309 @@
+1. Import the dataset and do usual exploratory analysis steps like checking the 
+structure & characteristics of the dataset. 
+Data type of columns in a table 
+
+Query: 
+              select column_name, data_type 
+              from `case-study-383004.case_study.INFORMATION_SCHEMA.COLUMNS` 
+              where table_name = 'customers' 
+              order by ordinal_position 
+ 
+Observation:- 
+• In this data some columns are having the string data and some integer 
+data also. 
+• But Customer_id having the integers and characters both so in big 
+query we consider it as “String” only, generally it is a “Varchar”. 
+• Zip code must be integers only so that should be integer data type. 
+Recommendations: - 
+• To know about the data types of data use this above syntax. 
+Time period for which the data is given. 
+Query: 
+                SELECT order_purchase_timestamp, order_purchase_timestamp, order_purchase_timestamp,
+                order_purchase_timestamp  
+                FROM `case-study-383004.case_study.orders` LIMIT 10 
+                SELECT review_answer_timestamp, review_answer_timestamp, review_answer_timestamp, 
+                review_answer_timestamp 
+                FROM `case-study-383004.case_study.order_reviews` LIMIT 10 
+ 
+Observation: - 
+• In this orders and order items both have the time periods. 
+• Both are giving the time stamp between orders and purchasing periods and 
+estimated time also.  
+Recommendations: -    
+• Above queries both are representing the orders when we give. 
+• If want to particular days we can use different functions and create days, 
+months and years separately. 
+Cities and States of customers ordered during the given period.
+Query: 
+              select c.customer_city, c.customer_state, Count(o.order_approved_at) AS order_state, 
+              extract(year from o.order_purchase_timestamp) AS period 
+              from `case_study.customers` AS c 
+              join `case_study.orders` AS o 
+              on c.customer_id = o.customer_id 
+              Group By c.customer_city,c.customer_state, period 
+              LIMIT 10
+
+Observation: -  
+• In this above case there is two tables involved. Those are customers and orders 
+tables. 
+• Customers tables are having cities and states, orders tables having periods of 
+orders. 
+• So here I observed during the period of years so many customers are orders 
+during the periods. 
+Recommendations: -    
+• During the period how many customers involved from which state and cities we 
+use both customers and orders tables. 
+2. In-depth Exploration: 
+Is there a growing trend on e-commerce in Brazil? How can we describe a 
+complete scenario? Can we see some seasonality with peaks at specific months? 
+  Query: 
+                    SELECT Extract(year FROM order_purchase_timestamp) AS Year, 
+                    Extract(month FROM order_purchase_timestamp) AS Month, 
+                    COUNT(1) AS Num_Orders 
+                    FROM `case-study-383004.case_study.orders` 
+                    Group By Year, Month 
+                    Order By Year, Month  
+Observation: -  
+• In this query I observed the seasonally growing the orders. 
+• Here some of months have the more orders and some moths have less orders. 
+Recommendations: - 
+• In this case we easily find out the seasonal orders and looking this we easily 
+take the decision to improve our business orders. 
+What time do Brazilian customers tend to buy (Dawn, Morning, Afternoon or 
+Night)? 
+3. Evolution of E-commerce orders in the Brazil region: 
+Get month on month orders by states 
+Query: 
+                  select extract(month from o.order_purchase_timestamp) AS mnth, c.customer_state, count(o.
+                  order_id)AS num_orders 
+                  from `case_study.customers` AS c 
+                  JOIN `case_study.orders` AS o  
+                  ON c.customer_id = o.customer_id 
+                  group by 1,2 
+                  order by 1 
+ 
+Observation: -  
+• Here every month-on-month sales is displaying. 
+• So, some moths number of orders is more and some months number of orders is 
+less.  
+• Above query we grouped by months wise and states wise 
+Recommendations: - 
+• In query we are finding month on month orders from different states. 
+• So, to see this table which states are having less orders we need to increase the 
+orders easily. 
+Distribution of customers across the states in Brazil 
+Query: 
+                select customer_state, count(customer_id) AS no_cust 
+                from `case_study.customers` 
+                group by 1 
+
+Observation: - 
+• In this above query shows the distribution of customers as per states. 
+• So, here some states should be less customers and some more customers. 
+Recommendations: - 
+• To see this table, we easily find out the customers according to states wise. 
+  
+ 
+ 
+4. Impact on Economy: Analyze the money movement by e-commerce by looking 
+at order prices, freight, and others. 
+Get % increase in cost of orders from 2017 to 2018 (include months between 
+Jan to Aug only) - You can use “payment_value” column in payments table. 
+  Query: 
+              with a as ( 
+              select extract(year from o.order_purchase_timestamp) AS yr, sum(p.payment_value) AS cost
+              _orders 
+              from `case_study.orders` AS o 
+              JOIN `case_study.payments` AS p 
+              ON o.order_id = p.order_id 
+              where extract(month from o.order_purchase_timestamp) between 1 and 8 
+              Group by 1) 
+ 
+            select round(((a1.cost_orders/a2.cost_orders)-1)*100,2) AS perc_increase 
+            from a as a1, a as a2 
+            where a1.yr = 2018 and a2.yr = 2017 
+
+Observation: - 
+• In this above query shows percentage increase in cost of orders from 2017 to 2018. 
+• So, the result is 136.98% increase from 2017 to 2018. 
+Recommendations: - 
+• To see this I see the orders and payments table orders increase year by year. 
+. 
+ 
+Mean & Sum of price and freight value by customer state. 
+Query: 
+            select c.customer_state,avg(oi.price) as Mean_price, 
+                  sum(oi.price) as Sum_price, 
+                  AVG(oi.freight_value) AS AVG_freight_value, 
+                  Sum(oi.freight_value) AS Total_freight 
+            FROM `case_study.customers` AS c 
+            JOIN `case_study.orders` AS o 
+            ON c.customer_id = o.customer_id 
+            JOIN `case_study.order_items` AS oi 
+            on o.order_id = oi.order_id 
+            group by 1 
+             
+Observation: - 
+• Above table shows the Mean, sum, freight and total freight charges during the 
+customer states. 
+• It is different from total charges of the states how much. 
+Recommendations: - 
+• To see the changes between the states we use this query and find out the mean and 
+freight charges. 
+ 
+5. Analysis on sales, freight, and delivery time 
+Calculate days between purchasing, delivering and estimated delivery. 
+Query: 
+            select  
+                  date_diff(order_purchase_timestamp, order_delivered_customer_date, Day) AS Diff_Pur
+            _Del, 
+                  date_diff(order_estimated_delivery_date, order_delivered_customer_date, Day) AS Diff_
+            Est_Del 
+            from `case_study.orders` 
+             
+Observation: - 
+• Above table shows the days between purchasing, delivering and estimated 
+delivery. 
+• Observe this table purchasing to delivery so much of days is there and estimated to 
+delivery also so much of days is there. 
+Recommendations: - 
+• If we take the different of the estimated and delivery and purchase to delivery there 
+is a so much of time difference is there. 
+ 
+Find time_to_delivery & diff_estimated_delivery. Formula for the same given 
+below: 
+o time_to_delivery = order_purchase_timestamp-order - delivered_customer_date 
+o diff_estimated_delivery=order_estimated_delivery_date
+order_delivered_customer_date 
+Query: 
+            SELECT date_diff(order_purchase_timestamp, order_delivered_customer_date, Day) AS Ti
+            me_to_delivery, 
+                  date_diff(order_estimated_delivery_date, order_delivered_customer_date, Day) AS diff_e
+            stimated_delivery 
+            from `case_study.orders` 
+             
+Observation: - 
+• Above table shows the days between purchasing, delivering and estimated 
+delivery. 
+• Observe this table purchasing to delivery so much of days is there and estimated to 
+delivery also so much of days is there. 
+Recommendations: - 
+• If we take the different of the estimated and delivery and purchase to delivery, 
+there is a so much of time difference is there. 
+Group data by state, take mean of freight_value, time_to_delivery, 
+diff_estimated_delivery. 
+  Query: 
+              SELECT customer_state,AVG(freight_value) AS Mean_Freight_Value, 
+                      date_diff(order_purchase_timestamp, order_delivered_customer_date, Day) AS Time_to
+              _delivery, 
+                    date_diff(order_estimated_delivery_date, order_delivered_customer_date, Day) AS diff_e
+              stimated_delivery 
+                     
+              from `case_study.orders` 
+              JOIN `case_study.order_items`  
+              ON `case_study.orders`.order_id =`case_study.order_items`.order_id 
+              JOIN `case_study.customers` 
+              ON `case_study.orders`.customer_id = `case_study.customers`.customer_id 
+              GROUP BY `case_study.customers`.customer_state,Time_to_delivery, diff_estimated_delive
+              ry 
+              ORDER BY customer_state DESC 
+ 
+ 
+Observation: - 
+• Group data by state, take mean of freight_value, time_to_delivery, 
+diff_estimated_delivery. 
+• There should be mean value and time to delivery and difference between the 
+estimated date and delivery date. 
+• Here we observe the value to one out of the other dates. 
+Recommendations: - 
+• If we take the data between those means, we recommend that use this query. 
+Sort the data to get the following: 
+Top 5 states with highest/lowest average freight value - sort in desc/asc limit 5. 
+Query: 
+          SELECT `case_study.customers`.customer_state,  
+                AVG(freight_value) AS Mean_Freight_Value 
+          from `case_study.orders` 
+          JOIN `case_study.order_items`  
+          ON `case_study.orders`.order_id =`case_study.order_items`.order_id 
+          JOIN `case_study.customers` 
+          ON `case_study.orders`.customer_id = `case_study.customers`.customer_id 
+          GROUP BY `case_study.customers`.customer_state 
+          ORDER BY Mean_Freight_Value DESC 
+          LIMIT 5 
+           
+Observation: - 
+• Above table shows the top five freight charges is showing. 
+• Because the freight charges are different than the different states. 
+Recommendations: - 
+• To know the mean of freight charges use this query. 
+ 
+ 
+Top 5 states with highest/lowest average time to delivery 
+  Query: 
+              SELECT c.customer_state, 
+                    AVG(date_diff(order_purchase_timestamp, order_delivered_customer_date, Day)) AS A
+              VG_Time_to_delivery 
+              from `case_study.orders` AS o 
+              JOIN `case_study.customers` AS c 
+              ON o.customer_id = c.customer_id 
+              GROUP BY c.customer_state 
+              ORDER BY AVG_Time_to_delivery, customer_state DESC 
+              LIMIT 5 
+Observation: - 
+• In this table showing the average of delivery to time to estimate to each state. 
+• Those all should be negative because there should be estimated to delivery date 
+first, so we get the negative balance. 
+• In case estimated date is first and delivery date is to be next we get the positive 
+days. 
+Recommendations: - 
+• In the I see, if we show the mean of the delivery date to use this query. 
+ 
+Top 5 states where delivery is really fast/ not so fast compared to estimated date. 
+Query: 
+              SELECT c.customer_state, 
+                    date_diff(order_delivered_customer_date, order_estimated_delivery_date, Day) AS Fast_
+              delivery 
+              from `case_study.orders` AS o  
+              JOIN `case_study.customers`AS c 
+              ON o.customer_id = c.customer_id 
+              GROUP BY c.customer_state,Fast_delivery 
+              ORDER BY Fast_delivery DESC 
+              LIMIT 5 
+               
+Observation: - 
+• In this query to show the fast delivery to estimated. 
+• So, in this more days is there meaning the product is delivered fast. 
+• If it is negative days, there means the product is lately delivered. 
+Recommendations: - 
+• To know the item delivered fast or not to use this query. 
+ 
+ 
+6. Payment type analysis: 
+Month over Month count of orders for different payment types. 
+Query: 
+            SELECT extract(month from o.order_purchase_timestamp) AS mnth, 
+                  p.payment_type, count(distinct o.order_id) AS num_orders 
+            FROM `case-study-383004.case_study.orders` AS o Join `case-study
+            383004.case_study.payments` AS p  
+            ON o.order_id = p.order_id 
+            GROUP BY 1,2 
+            order by 1; 
+              
+Observation: - 
+• The above table shows the different payment methods. 
+• Here so many customers using the credit card option. 
+• We get to know the which is more available to customers to paid. 
+Recommendations: - 
+• To use this query we strongly recommend that next future may be UPI payments 
+must be increase, in case if we give any rewards. 
+ 
+Count of orders based on the no. of payment instalments. 
+Query: 
+            select payment_installments, count(distinct order_id) AS num_orders 
+            From `case-study-383004.case_study.payments` 
+            group by 1; 
+Observation: - 
+• The above table shows the on which instalment how many orders got. 
+• To see this, we got to know the orders per instalments. 
+Recommendations: - 
+• To above this instalment should be the depends on the orders.
